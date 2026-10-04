@@ -23,7 +23,7 @@ jobs:
           echo "BT=$BT"
           echo "AJ=$AJ"
 
-          mkdir -p stubc out dexout
+          mkdir -p stubc out dexout libs
           javac -d stubc $(find stub -name '*.java')
           jar cf libs/xposed-stub.jar -C stubc .
           javac -cp libs/xposed-stub.jar -d out $(find src -name '*.java')
