@@ -30,7 +30,8 @@ jobs:
 
           "$BT/d8" --release --lib "$AJ" --min-api 21 --output dexout $(find out -name '*.class')
 
-          "$BT/aapt2" link -o base.apk -I "$AJ" --manifest AndroidManifest.xml -A assets \
+          "$BT/aapt2" compile --dir res -o compiled-res.zip
+          "$BT/aapt2" link -o base.apk -I "$AJ" --manifest AndroidManifest.xml -A assets -R compiled-res.zip --auto-add-overlay \
             --min-sdk-version 21 --target-sdk-version 34 --version-code 1 --version-name 1.0
           (cd dexout && zip -j ../base.apk classes.dex)
 
