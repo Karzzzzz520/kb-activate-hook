@@ -1,0 +1,6 @@
+libs/
+out/
+stubc/
+dexout/
+*.apk
+*.jks

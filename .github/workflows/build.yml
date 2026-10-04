@@ -1,0 +1,45 @@
+name: build
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Build APK
+        run: |
+          set -e
+          if [ -z "$ANDROID_HOME" ]; then export ANDROID_HOME=/usr/local/lib/android/sdk; fi
+          BT=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
+          PLAT=$(ls -d $ANDROID_HOME/platforms/android-* | sort -V | tail -1)
+          AJ="$PLAT/android.jar"
+          echo "BT=$BT"
+          echo "AJ=$AJ"
+
+          mkdir -p stubc out dexout
+          javac -d stubc $(find stub -name '*.java')
+          jar cf libs/xposed-stub.jar -C stubc .
+          javac -cp libs/xposed-stub.jar -d out $(find src -name '*.java')
+
+          "$BT/d8" --release --lib "$AJ" --min-api 21 --output dexout $(find out -name '*.class')
+
+          "$BT/aapt2" link -o base.apk -I "$AJ" --manifest AndroidManifest.xml -A assets \
+            --min-sdk-version 21 --target-sdk-version 34 --version-code 1 --version-name 1.0
+          (cd dexout && zip -j ../base.apk classes.dex)
+
+          keytool -genkeypair -keystore ks.jks -storepass 123456 -keypass 123456 -alias k \
+            -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=kbhook,O=kb,C=CN"
+          "$BT/apksigner" sign --ks ks.jks --ks-pass pass:123456 --key-pass pass:123456 \
+            --out KbActivateHook.apk base.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: KbActivateHook
+          path: KbActivateHook.apk
